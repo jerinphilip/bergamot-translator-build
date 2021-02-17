@@ -5,16 +5,17 @@
 
 THREADS=40
 
-SHELL := /bin/bash
+SHELL    := /bin/bash
 
-ROOT := /mnt/Storage/jphilip/bergamot
+ROOT     := /mnt/Storage/jphilip/bergamot
 BERGAMOT := $(ROOT)/bergamot-translator
 EMSDK    := $(ROOT)/emsdk
 MODELS   := $(ROOT)/models
 
-BUILD := $(ROOT)/build
+BUILD        := $(ROOT)/build
 NATIVE_BUILD := $(BUILD)/native
 WASM_BUILD   := $(BUILD)/wasm
+MODELS_GZ	 := $(BUILD)/models.gz.d
 
 # Requires CMake > 3.12 or something. Locally compiled and added.
 # 3.20.0-rc1 is used while testing this script
@@ -28,7 +29,7 @@ BRANCH ?= jp/absorb-batch-translator
 .PHONY: emsdk bergamot models dirs
 
 dirs:
-	mkdir -p $(ROOT) $(BUILD) $(NATIVE_BUILD) $(WASM_BUILD)
+	mkdir -p $(ROOT) $(BUILD) $(NATIVE_BUILD) $(WASM_BUILD) $(MODELS_GZ)
 
 emsdk:
 	git -C $(EMSDK) pull || git clone https://github.com/emscripten-core/emsdk.git $(EMSDK)
@@ -39,8 +40,10 @@ bergamot:
 	git -C $(BERGAMOT) checkout $(BRANCH)
 	git -C $(BERGAMOT) submodule update --init --recursive
 
-models:
+models: dirs
 	git -C $(MODELS) pull || git clone https://github.com/mozilla-applied-ml/bergamot-models $(MODELS)
+	cp -r $(MODELS)/* $(MODELS_GZ)/
+	gunzip $(MODELS_GZ)/*/*
 
 first-setup: emsdk dirs models
 
