@@ -44,7 +44,7 @@ models:
 
 first-setup: emsdk dirs models
 
-wasm: bergamot 
+wasm: bergamot dirs
 	$(EMSDK)/emsdk activate latest &> /tmp/error.log || cat /tmp/error.log
 	source $(EMSDK)/emsdk_env.sh && cd $(WASM_BUILD) && \
 		emcmake $(CMAKE) -L \
@@ -54,10 +54,17 @@ wasm: bergamot
 			$(BERGAMOT)
 	cd $(WASM_BUILD) && make -f $(WASM_BUILD)/Makefile -j$(THREADS)
 
-native:  bergamot
+native:  bergamot dirs
 	cd $(NATIVE_BUILD) && $(CMAKE) -L -DCOMPILE_CUDA=off -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
       -DCOMPILE_DECODER_ONLY=off -DCOMPILE_LIBRARY_ONLY=off -DUSE_MKL=on \
       -DCOMPILE_THREAD_VARIANT=on -S $(BERGAMOT)
 	cd $(NATIVE_BUILD) && make -f $(NATIVE_BUILD)/Makefile -j$(THREADS)
 
+clean:
+	rm $(BUILD) -rv
 
+clean-native: 
+	rm $(NATIVE_BUILD) -rv
+
+clean-wasm:
+	rm $(WASM_BUILD) -rv
