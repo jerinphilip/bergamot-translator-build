@@ -21,7 +21,7 @@ WASM_BUILD   := $(BUILD)/wasm
 CMAKE := /home/jphilip/.local/bin/cmake
 
 # Parameterize builds by branches
-BRANCH := jp/absorb-batch-translator 
+BRANCH ?= jp/absorb-batch-translator 
 
 
 .PHONY: emsdk bergamot models dirs
