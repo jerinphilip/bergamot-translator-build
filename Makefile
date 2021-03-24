@@ -53,8 +53,8 @@ wasm: dirs bergamot
 		emcmake $(CMAKE) -L \
 			-DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
 			-DCOMPILE_WASM=on \
-			$(BERGAMOT)
-	cd $(WASM_BUILD) &&  make -f $(WASM_BUILD)/Makefile -j$(THREADS)
+			$(BERGAMOT) && \
+				cd $(WASM_BUILD) &&  emmake make -f $(WASM_BUILD)/Makefile -j$(THREADS)
 
 native: dirs bergamot
 	cd $(NATIVE_BUILD) && \
