@@ -47,14 +47,14 @@ models: dirs
 
 first-setup: emsdk dirs models
 
-wasm: dirs bergamot
-	$(EMSDK)/emsdk activate latest &> /tmp/error.log || cat /tmp/error.log
-	source $(EMSDK)/emsdk_env.sh && cd $(WASM_BUILD) && \
-		emcmake $(CMAKE) -L \
-			-DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
-			-DCOMPILE_WASM=on \
-			$(BERGAMOT) && \
-				cd $(WASM_BUILD) &&  emmake make -f $(WASM_BUILD)/Makefile -j$(THREADS)
+wasm: emsdk dirs bergamot
+	$(EMSDK)/emsdk activate latest && \
+		source $(EMSDK)/emsdk_env.sh && cd $(WASM_BUILD) && \
+			emcmake $(CMAKE) -L \
+				-DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
+				-DCOMPILE_WASM=on \
+				$(BERGAMOT) && \
+					cd $(WASM_BUILD) &&  emmake make -f $(WASM_BUILD)/Makefile -j$(THREADS)
 
 native: dirs bergamot
 	cd $(NATIVE_BUILD) && \
@@ -74,3 +74,12 @@ clean-native:
 
 clean-wasm:
 	rm $(WASM_BUILD) -rv
+
+server:
+	$(EMSDK)/emsdk activate latest && \
+		source $(EMSDK)/emsdk_env.sh && \
+		cd $(BERGAMOT)/wasm &&  cd test_page && rm -rf models && mkdir -p models \
+		&& (git -C bergamot-models pull || git clone --depth 1 --branch main --single-branch https://github.com/mozilla-applied-ml/bergamot-models ) \
+		&& cp -rf bergamot-models/prod/* models \
+		&& gunzip models/*/* \
+	    && bash start_server.sh
