@@ -82,5 +82,5 @@ server:
 		&& rm -rf models && mkdir -p models \
 		&& (git -C bergamot-models pull || git clone --depth 1 --branch main --single-branch https://github.com/mozilla-applied-ml/bergamot-models ) \
 		&& cp -rf bergamot-models/prod/* models \
-		&& gunzip models/*/* \
+		&& gunzip -v models/*/* \
 	    && bash start_server.sh
