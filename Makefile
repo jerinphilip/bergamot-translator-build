@@ -41,18 +41,20 @@ bergamot:
 	git -C $(BERGAMOT) submodule update --init --recursive
 
 models: dirs
-	git -C $(MODELS) pull || git clone https://github.com/mozilla-applied-ml/bergamot-models $(MODELS)
-	cp -r $(MODELS)/* $(MODELS_GZ)/
+	git -C $(MODELS) pull || git clone --depth 1 --branch main --single-branch https://github.com/mozilla-applied-ml/bergamot-models $(MODELS)
+	rm -r $(MODELS_GZ)/*
+	cp -r $(MODELS)/dev/* $(MODELS_GZ)/
 	gunzip $(MODELS_GZ)/*/*
 
 first-setup: emsdk dirs models
 
-wasm: emsdk dirs bergamot
+wasm: emsdk dirs bergamot models
 	$(EMSDK)/emsdk activate latest && \
 		source $(EMSDK)/emsdk_env.sh && cd $(WASM_BUILD) && \
 			emcmake $(CMAKE) -L \
 				-DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
 				-DCOMPILE_WASM=on \
+				-DPACKAGE_DIR=$(MODELS_GZ) \
 				$(BERGAMOT) && \
 					cd $(WASM_BUILD) &&  emmake make -f $(WASM_BUILD)/Makefile -j$(THREADS)
 
@@ -75,12 +77,14 @@ clean-native:
 clean-wasm:
 	rm $(WASM_BUILD) -rv
 
-server:
+instantiate-simd:
+	sed -i.bak 's/var result = WebAssembly.instantiateStreaming(response, info);/var result = WebAssembly.instantiateStreaming(response, info,{simdWormhole:true});/g' $(WASM_BUILD)/wasm/bergamot-translator-worker.js
+	sed -i.bak 's/return WebAssembly.instantiate(binary, info);/return WebAssembly.instantiate(binary, info, {simdWormhole:true});/g' $(WASM_BUILD)/wasm/bergamot-translator-worker.js
+	sed -i.bak 's/var module = new WebAssembly.Module(bytes);/var module = new WebAssembly.Module(bytes, {simdWormhole:true});/g' $(WASM_BUILD)/wasm/bergamot-translator-worker.js
+
+
+server: instantiate-simd
 	$(EMSDK)/emsdk activate latest && \
 		source $(EMSDK)/emsdk_env.sh && \
 		cd $(BERGAMOT)/wasm &&  cd test_page \
-		&& rm -rf models && mkdir -p models \
-		&& (git -C bergamot-models pull || git clone --depth 1 --branch main --single-branch https://github.com/mozilla-applied-ml/bergamot-models ) \
-		&& cp -rf bergamot-models/prod/* models \
-		&& gunzip -v models/*/* \
 	    && bash start_server.sh
