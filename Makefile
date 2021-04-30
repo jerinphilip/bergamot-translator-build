@@ -23,7 +23,7 @@ CMAKE := /home/jphilip/.local/bin/cmake
 BUILD_TYPE ?= Release
 
 # Parameterize builds by branches
-BRANCH ?= jp/absorb-batch-translator 
+BRANCH ?= main
 
 
 .PHONY: emsdk bergamot models dirs
@@ -78,7 +78,8 @@ clean-wasm:
 server:
 	$(EMSDK)/emsdk activate latest && \
 		source $(EMSDK)/emsdk_env.sh && \
-		cd $(BERGAMOT)/wasm &&  cd test_page && rm -rf models && mkdir -p models \
+		cd $(BERGAMOT)/wasm &&  cd test_page \
+		&& rm -rf models && mkdir -p models \
 		&& (git -C bergamot-models pull || git clone --depth 1 --branch main --single-branch https://github.com/mozilla-applied-ml/bergamot-models ) \
 		&& cp -rf bergamot-models/prod/* models \
 		&& gunzip models/*/* \
