@@ -77,14 +77,19 @@ clean-native:
 clean-wasm:
 	rm $(WASM_BUILD) -rv
 
-instantiate-simd:
+instantiate-simd: wasm
 	sed -i.bak 's/var result = WebAssembly.instantiateStreaming(response, info);/var result = WebAssembly.instantiateStreaming(response, info,{simdWormhole:true});/g' $(WASM_BUILD)/wasm/bergamot-translator-worker.js
 	sed -i.bak 's/return WebAssembly.instantiate(binary, info);/return WebAssembly.instantiate(binary, info, {simdWormhole:true});/g' $(WASM_BUILD)/wasm/bergamot-translator-worker.js
 	sed -i.bak 's/var module = new WebAssembly.Module(bytes);/var module = new WebAssembly.Module(bytes, {simdWormhole:true});/g' $(WASM_BUILD)/wasm/bergamot-translator-worker.js
 
 
-server: instantiate-simd
+copy-artifacts-locally: instantiate-simd
+	cp -rv $(WASM_BUILD)/wasm/bergamot-translator-worker.{js,data,wasm,worker.js} \
+		$(BERGAMOT)/wasm/test_page
+
+server: copy-artifacts-locally
 	$(EMSDK)/emsdk activate latest && \
 		source $(EMSDK)/emsdk_env.sh && \
 		cd $(BERGAMOT)/wasm &&  cd test_page \
-	    && bash start_server.sh
+	    && npm install && node bergamot-httpserver.js
+
