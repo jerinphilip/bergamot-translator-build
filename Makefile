@@ -36,7 +36,10 @@ emsdk:
 	$(EMSDK)/emsdk install latest
 
 bergamot:
-	git -C $(BERGAMOT) pull || git clone https://github.com/browsermt/bergamot-translator $(BERGAMOT)
+	git -C $(BERGAMOT) pull || \
+		( git clone https://github.com/browsermt/bergamot-translator $(BERGAMOT) \
+		 && git -C $(BERGAMOT) config --add remote.origin.fetch \
+				+refs/pull/*/head:refs/pull/origin/* )
 	git -C $(BERGAMOT) checkout $(BRANCH)
 	git -C $(BERGAMOT) submodule update --init --recursive
 
