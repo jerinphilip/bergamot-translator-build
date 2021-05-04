@@ -81,16 +81,11 @@ clean-native:
 clean-wasm:
 	rm $(WASM_BUILD) -rv
 
-instantiate-simd: wasm
-	sed -i.bak 's/WebAssembly.instantiateStreaming[[:space:]]*([[:space:]]*response[[:space:]]*,[[:space:]]*info[[:space:]]*)/WebAssembly.instantiateStreaming(response, info, {simdWormhole:true})/g' $(WASM_BUILD)/wasm/bergamot-translator-worker.js
-	sed -i.bak 's/WebAssembly.instantiate[[:space:]]*([[:space:]]*binary[[:space:]]*,[[:space:]]*info[[:space:]]*)/WebAssembly.instantiate(binary, info, {simdWormhole:true})/g' $(WASM_BUILD)/wasm/bergamot-translator-worker.js
-	sed -i.bak 's/WebAssembly.Module[[:space:]]*([[:space:]]*bytes[[:space:]]*)/WebAssembly.Module(bytes, {simdWormhole:true})/g' $(WASM_BUILD)/wasm/bergamot-translator-worker.js
 
-copy-artifacts-locally: instantiate-simd
+server: 
+	bash $(BERGAMOT)/wasm/patch-artifacts-enable-wormhole.sh $(WASM_BUILD)
 	cp -rv $(WASM_BUILD)/wasm/bergamot-translator-worker.{js,data,wasm,worker.js} \
 		$(BERGAMOT)/wasm/test_page
-
-server: copy-artifacts-locally
 	$(EMSDK)/emsdk activate latest && \
 		source $(EMSDK)/emsdk_env.sh && \
 		cd $(BERGAMOT)/wasm &&  cd test_page \
