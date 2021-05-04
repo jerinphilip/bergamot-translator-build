@@ -10,6 +10,7 @@ SHELL    := /bin/bash
 ROOT     := /mnt/Storage/jphilip/bergamot
 BERGAMOT := $(ROOT)/bergamot-translator
 EMSDK    := $(ROOT)/emsdk
+EXTENSION :=$(ROOT)/bergamot-browser-extension
 MODELS   := $(ROOT)/models
 
 BUILD        := $(ROOT)/build
@@ -81,10 +82,9 @@ clean-wasm:
 	rm $(WASM_BUILD) -rv
 
 instantiate-simd: wasm
-	sed -i.bak 's/var result = WebAssembly.instantiateStreaming(response, info);/var result = WebAssembly.instantiateStreaming(response, info,{simdWormhole:true});/g' $(WASM_BUILD)/wasm/bergamot-translator-worker.js
-	sed -i.bak 's/return WebAssembly.instantiate(binary, info);/return WebAssembly.instantiate(binary, info, {simdWormhole:true});/g' $(WASM_BUILD)/wasm/bergamot-translator-worker.js
-	sed -i.bak 's/var module = new WebAssembly.Module(bytes);/var module = new WebAssembly.Module(bytes, {simdWormhole:true});/g' $(WASM_BUILD)/wasm/bergamot-translator-worker.js
-
+	sed -i.bak 's/WebAssembly.instantiateStreaming[[:space:]]*([[:space:]]*response[[:space:]]*,[[:space:]]*info[[:space:]]*)/WebAssembly.instantiateStreaming(response, info, {simdWormhole:true})/g' $(WASM_BUILD)/wasm/bergamot-translator-worker.js
+	sed -i.bak 's/WebAssembly.instantiate[[:space:]]*([[:space:]]*binary[[:space:]]*,[[:space:]]*info[[:space:]]*)/WebAssembly.instantiate(binary, info, {simdWormhole:true})/g' $(WASM_BUILD)/wasm/bergamot-translator-worker.js
+	sed -i.bak 's/WebAssembly.Module[[:space:]]*([[:space:]]*bytes[[:space:]]*)/WebAssembly.Module(bytes, {simdWormhole:true})/g' $(WASM_BUILD)/wasm/bergamot-translator-worker.js
 
 copy-artifacts-locally: instantiate-simd
 	cp -rv $(WASM_BUILD)/wasm/bergamot-translator-worker.{js,data,wasm,worker.js} \
@@ -96,3 +96,10 @@ server: copy-artifacts-locally
 		cd $(BERGAMOT)/wasm &&  cd test_page \
 	    && npm install && node bergamot-httpserver.js
 
+extension: wasm
+	git -C $(EXTENSION) pull  || git clone https://github.com/mozilla-extensions/bergamot-browser-extension $(EXTENSION)
+	$(EMSDK)/emsdk activate latest && source $(EMSDK)/emsdk_env.sh &&  \
+		cd $(EXTENSION) &&  \
+		npm install --global yarn && yarn install && \
+		$(EXTENSION)/import-bergamot-translator.sh $(WASM_BUILD) && \
+		yarn build:firefox-infobar-ui
